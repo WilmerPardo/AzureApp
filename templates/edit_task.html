@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Tarea — TaskFlow SaaS{% endblock %}
+
+{% block content %}
+<div class="page-wrapper py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+              <a href="{{ url_for('dashboard') }}" class="text-decoration-none">
+                <i class="bi bi-speedometer2 me-1"></i>Dashboard
+              </a>
+            </li>
+            <li class="breadcrumb-item">
+              <a href="{{ url_for('tasks') }}" class="text-decoration-none">Tareas</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Editar tarea</li>
+          </ol>
+        </nav>
+
+        <div class="form-card animate-slide-up">
+          <!-- Header -->
+          <div class="form-card-header mb-4">
+            <div class="form-card-icon edit-icon">
+              <i class="bi bi-pencil-square"></i>
+            </div>
+            <div>
+              <h1 class="page-title mb-1">Editar tarea</h1>
+              <p class="text-muted mb-0">Modifica los datos de tu tarea</p>
+            </div>
+          </div>
+
+          <!-- Info de la tarea original -->
+          <div class="task-meta-info mb-4">
+            <small class="text-muted">
+              <i class="bi bi-calendar-event me-1"></i>
+              Creada el {{ task.created_at.strftime('%d de %B de %Y a las %H:%M') }}
+              &nbsp;|&nbsp;
+              Estado actual:
+              <span class="badge {% if task.is_completed() %}badge-done{% else %}badge-pending{% endif %}">
+                {{ task.status.capitalize() }}
+              </span>
+            </small>
+          </div>
+
+          <!-- Formulario de edición -->
+          <form method="POST" action="{{ url_for('edit_task', task_id=task.id) }}" novalidate id="edit-task-form">
+            {{ form.hidden_tag() }}
+
+            <!-- Título -->
+            <div class="mb-4">
+              <label for="title" class="form-label fw-medium">
+                <i class="bi bi-card-heading me-1 text-primary"></i>{{ form.title.label.text }}
+                <span class="text-danger">*</span>
+              </label>
+              {{ form.title(
+                class="form-control form-control-lg" + (" is-invalid" if form.title.errors else ""),
+                id="title",
+                placeholder="Título de la tarea",
+                maxlength=200
+              ) }}
+              {% if form.title.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.title.errors %}{{ error }}{% endfor %}
+                </div>
+              {% endif %}
+              <div class="form-text text-end">
+                <span id="titleCount">{{ form.title.data|length if form.title.data else 0 }}</span>/200 caracteres
+              </div>
+            </div>
+
+            <!-- Descripción -->
+            <div class="mb-4">
+              <label for="description" class="form-label fw-medium">
+                <i class="bi bi-text-paragraph me-1 text-primary"></i>{{ form.description.label.text }}
+              </label>
+              {{ form.description(
+                class="form-control" + (" is-invalid" if form.description.errors else ""),
+                id="description",
+                rows=4,
+                placeholder="Descripción o notas adicionales (opcional)...",
+                maxlength=1000
+              ) }}
+              {% if form.description.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.description.errors %}{{ error }}{% endfor %}
+                </div>
+              {% endif %}
+              <div class="form-text text-end">
+                <span id="descCount">{{ form.description.data|length if form.description.data else 0 }}</span>/1000 caracteres
+              </div>
+            </div>
+
+            <!-- Estado -->
+            <div class="mb-4">
+              <label for="status" class="form-label fw-medium">
+                <i class="bi bi-toggle-on me-1 text-primary"></i>{{ form.status.label.text }}
+              </label>
+              {{ form.status(
+                class="form-select" + (" is-invalid" if form.status.errors else ""),
+                id="status"
+              ) }}
+              {% if form.status.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.status.errors %}{{ error }}{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="d-flex gap-3 mt-4">
+              <button type="submit" class="btn btn-primary-gradient flex-grow-1" id="btn-edit-submit">
+                <i class="bi bi-save me-2"></i>Guardar cambios
+              </button>
+              <a href="{{ url_for('tasks') }}" class="btn btn-outline-secondary" id="btn-edit-cancel">
+                <i class="bi bi-x-lg me-1"></i>Cancelar
+              </a>
+            </div>
+
+          </form>
+
+          <!-- Zona de peligro: eliminar -->
+          <hr class="my-4" />
+          <div class="danger-zone">
+            <h6 class="text-danger mb-2">
+              <i class="bi bi-exclamation-triangle me-1"></i>Zona peligrosa
+            </h6>
+            <p class="small text-muted mb-3">
+              Esta acción eliminará la tarea permanentemente y no puede deshacerse.
+            </p>
+            <form
+              method="POST"
+              action="{{ url_for('delete_task', task_id=task.id) }}"
+              onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.')"
+            >
+              <button type="submit" class="btn btn-outline-danger btn-sm" id="btn-edit-delete">
+                <i class="bi bi-trash3 me-2"></i>Eliminar esta tarea
+              </button>
+            </form>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Contador de caracteres — título
+  const titleInput = document.getElementById("title");
+  const titleCount = document.getElementById("titleCount");
+  titleInput.addEventListener("input", () => {
+    titleCount.textContent = titleInput.value.length;
+  });
+
+  // Contador de caracteres — descripción
+  const descInput = document.getElementById("description");
+  const descCount = document.getElementById("descCount");
+  descInput.addEventListener("input", () => {
+    descCount.textContent = descInput.value.length;
+  });
+</script>
+{% endblock %}

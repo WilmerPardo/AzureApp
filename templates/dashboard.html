@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — TaskFlow SaaS{% endblock %}
+
+{% block content %}
+<div class="page-wrapper py-5">
+  <div class="container">
+
+    <!-- ── Encabezado de bienvenida ── -->
+    <div class="dashboard-header mb-5">
+      <div class="d-flex align-items-center gap-3">
+        <div class="avatar-circle">
+          {{ current_user.name[0].upper() }}
+        </div>
+        <div>
+          <h1 class="page-title mb-0">
+            ¡Hola, <span class="text-gradient">{{ current_user.name.split()[0] }}</span>! 👋
+          </h1>
+          <p class="text-muted mb-0">
+            <i class="bi bi-calendar3 me-1"></i>
+            {{ now.strftime('%A, %d de %B de %Y') }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tarjetas de estadísticas ── -->
+    <div class="row g-4 mb-5">
+
+      <div class="col-md-4">
+        <div class="stat-card stat-total animate-slide-up">
+          <div class="stat-card-icon">
+            <i class="bi bi-list-task"></i>
+          </div>
+          <div class="stat-card-body">
+            <div class="stat-card-number">{{ total }}</div>
+            <div class="stat-card-label">Tareas totales</div>
+          </div>
+          <div class="stat-card-bg-icon">
+            <i class="bi bi-list-task"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="stat-card stat-pending animate-slide-up delay-1">
+          <div class="stat-card-icon">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <div class="stat-card-body">
+            <div class="stat-card-number">{{ pending }}</div>
+            <div class="stat-card-label">Pendientes</div>
+          </div>
+          <div class="stat-card-bg-icon">
+            <i class="bi bi-clock-history"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="stat-card stat-done animate-slide-up delay-2">
+          <div class="stat-card-icon">
+            <i class="bi bi-check2-circle"></i>
+          </div>
+          <div class="stat-card-body">
+            <div class="stat-card-number">{{ completed }}</div>
+            <div class="stat-card-label">Completadas</div>
+          </div>
+          <div class="stat-card-bg-icon">
+            <i class="bi bi-check2-circle"></i>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Barra de progreso ── -->
+    {% if total > 0 %}
+    <div class="progress-section mb-5 animate-fade-in">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="fw-medium">Progreso general</span>
+        <span class="text-muted">{{ "%.0f"|format((completed / total) * 100) }}% completado</span>
+      </div>
+      <div class="progress progress-lg" role="progressbar" aria-valuenow="{{ completed }}" aria-valuemin="0" aria-valuemax="{{ total }}">
+        <div
+          class="progress-bar progress-bar-striped progress-bar-animated"
+          style="width: {{ (completed / total * 100)|round|int }}%"
+        ></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Acciones rápidas ── -->
+    <div class="row g-3 mb-5">
+      <div class="col-12">
+        <h2 class="section-label mb-3">
+          <i class="bi bi-lightning me-2 text-warning"></i>Acciones rápidas
+        </h2>
+      </div>
+      <div class="col-auto">
+        <a href="{{ url_for('create_task') }}" class="btn btn-primary-gradient" id="btn-dash-create">
+          <i class="bi bi-plus-circle me-2"></i>Nueva tarea
+        </a>
+      </div>
+      <div class="col-auto">
+        <a href="{{ url_for('tasks') }}" class="btn btn-outline-primary" id="btn-dash-tasks">
+          <i class="bi bi-list-check me-2"></i>Ver todas mis tareas
+        </a>
+      </div>
+      <div class="col-auto">
+        <a href="{{ url_for('tasks') }}?status=pendiente" class="btn btn-outline-warning" id="btn-dash-pending">
+          <i class="bi bi-clock me-2"></i>Ver pendientes
+        </a>
+      </div>
+    </div>
+
+    <!-- ── Últimas tareas ── -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card-section">
+          <div class="card-section-header d-flex justify-content-between align-items-center mb-3">
+            <h2 class="section-label mb-0">
+              <i class="bi bi-clock-history me-2 text-primary"></i>Actividad reciente
+            </h2>
+            <a href="{{ url_for('tasks') }}" class="btn btn-link btn-sm" id="btn-dash-viewall">
+              Ver todas <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+
+          {% if recent_tasks %}
+            <div class="table-responsive">
+              <table class="table table-hover align-middle" id="recent-tasks-table">
+                <thead class="table-header">
+                  <tr>
+                    <th scope="col">Tarea</th>
+                    <th scope="col" class="text-center">Estado</th>
+                    <th scope="col" class="text-end">Creada</th>
+                    <th scope="col" class="text-center">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for task in recent_tasks %}
+                  <tr class="task-row {% if task.is_completed() %}task-done{% endif %}">
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-{% if task.is_completed() %}check-circle-fill text-success{% else %}circle text-warning{% endif %}"></i>
+                        <span class="{% if task.is_completed() %}text-decoration-line-through text-muted{% endif %}">
+                          {{ task.title }}
+                        </span>
+                      </div>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge {% if task.is_completed() %}badge-done{% else %}badge-pending{% endif %}">
+                        {{ task.status.capitalize() }}
+                      </span>
+                    </td>
+                    <td class="text-end text-muted small">
+                      {{ task.created_at.strftime('%d/%m/%Y') }}
+                    </td>
+                    <td class="text-center">
+                      <a href="{{ url_for('toggle_task', task_id=task.id) }}" class="btn btn-sm btn-ghost" title="Cambiar estado">
+                        <i class="bi bi-arrow-repeat"></i>
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="empty-state text-center py-5">
+              <div class="empty-icon mb-3">
+                <i class="bi bi-inbox"></i>
+              </div>
+              <h3 class="empty-title">Sin tareas todavía</h3>
+              <p class="text-muted mb-3">¡Crea tu primera tarea y empieza a organizarte!</p>
+              <a href="{{ url_for('create_task') }}" class="btn btn-primary-gradient" id="btn-dash-first-task">
+                <i class="bi bi-plus-circle me-2"></i>Crear primera tarea
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

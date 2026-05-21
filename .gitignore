@@ -1,0 +1,46 @@
+# Archivos de entorno (nunca subir al repositorio)
+.env
+*.env
+
+# Archivos de Python compilados
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Entornos virtuales
+venv/
+env/
+.venv/
+.ENV/
+ENV/
+
+# Distribución / empaquetado
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+
+# Archivos temporales de Flask
+instance/
+flask_session/
+
+# pytest
+.pytest_cache/
+htmlcov/
+.coverage

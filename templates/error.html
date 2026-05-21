@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Error {{ code }} — TaskFlow SaaS{% endblock %}
+
+{% block content %}
+<div class="page-wrapper py-6">
+  <div class="container text-center">
+    <div class="error-page animate-fade-in">
+      <div class="error-code text-gradient">{{ code }}</div>
+      <h1 class="error-title">
+        {% if code == 404 %}Página no encontrada
+        {% elif code == 403 %}Acceso denegado
+        {% elif code == 500 %}Error del servidor
+        {% else %}Algo salió mal{% endif %}
+      </h1>
+      <p class="error-message text-muted mb-4">{{ message }}</p>
+      <div class="d-flex justify-content-center gap-3">
+        <a href="{{ url_for('index') }}" class="btn btn-primary-gradient" id="btn-error-home">
+          <i class="bi bi-house me-2"></i>Ir al inicio
+        </a>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary" id="btn-error-dashboard">
+          <i class="bi bi-speedometer2 me-2"></i>Mi Dashboard
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Fondo redondeado -->
+  <rect width="40" height="40" rx="10" fill="url(#grad)" />
+  <!-- Icono de check-list estilizado -->
+  <rect x="10" y="12" width="14" height="2.5" rx="1.25" fill="white" opacity="0.9"/>
+  <circle cx="25" cy="13.25" r="2" fill="#10b981"/>
+  <path d="M23.8 13.25 L24.7 14.15 L26.3 12.35" stroke="white" stroke-width="0.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="10" y="18.75" width="14" height="2.5" rx="1.25" fill="white" opacity="0.9"/>
+  <circle cx="25" cy="20" r="2" fill="#10b981"/>
+  <path d="M23.8 20 L24.7 20.9 L26.3 19.1" stroke="white" stroke-width="0.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="10" y="25.5" width="14" height="2.5" rx="1.25" fill="white" opacity="0.6"/>
+  <circle cx="25" cy="26.75" r="2" fill="white" opacity="0.4"/>
+</svg>

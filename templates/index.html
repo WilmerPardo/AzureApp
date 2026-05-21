@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}TaskFlow SaaS — Gestión de Tareas en la Nube{% endblock %}
+{% block meta_description %}TaskFlow SaaS es una plataforma web para gestionar tus tareas personales y académicas de forma simple, segura y accesible desde cualquier dispositivo.{% endblock %}
+
+{% block content %}
+
+<!-- ════════════════════════════════════════════
+     HERO SECTION
+════════════════════════════════════════════ -->
+<section class="hero-section">
+  <div class="hero-bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <div class="container position-relative">
+    <div class="row align-items-center min-vh-85">
+      <div class="col-lg-6 text-center text-lg-start mb-5 mb-lg-0">
+        <div class="hero-badge mb-3 animate-fade-in">
+          <i class="bi bi-lightning-charge-fill me-1"></i>
+          Plataforma SaaS Académica
+        </div>
+        <h1 class="hero-title animate-slide-up">
+          Organiza tus tareas.<br />
+          <span class="text-gradient">Alcanza tus metas.</span>
+        </h1>
+        <p class="hero-subtitle animate-slide-up delay-1">
+          TaskFlow SaaS es tu plataforma de gestión de tareas en la nube. Crea, organiza y completa
+          tus pendientes académicos y personales desde cualquier dispositivo, en cualquier momento.
+        </p>
+        <div class="hero-actions animate-slide-up delay-2">
+          <a href="{{ url_for('register') }}" class="btn btn-primary-gradient btn-lg px-4 me-3" id="btn-hero-register">
+            <i class="bi bi-rocket-takeoff me-2"></i>Empieza gratis
+          </a>
+          <a href="{{ url_for('login') }}" class="btn btn-glass btn-lg px-4" id="btn-hero-login">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión
+          </a>
+        </div>
+        <div class="hero-stats mt-5 animate-fade-in delay-3">
+          <div class="stat-item">
+            <span class="stat-number">100%</span>
+            <span class="stat-label">En la nube</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">Seguro</span>
+            <span class="stat-label">SSL &amp; cifrado</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">Gratis</span>
+            <span class="stat-label">Para académicos</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 d-flex justify-content-center">
+        <div class="hero-card-preview animate-float">
+          <div class="preview-card">
+            <div class="preview-header">
+              <div class="preview-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <span class="preview-title">Mi Dashboard</span>
+            </div>
+            <div class="preview-body">
+              <div class="preview-stat-row">
+                <div class="preview-stat pending">
+                  <i class="bi bi-clock"></i>
+                  <span>5 Pendientes</span>
+                </div>
+                <div class="preview-stat done">
+                  <i class="bi bi-check2-circle"></i>
+                  <span>12 Completadas</span>
+                </div>
+              </div>
+              <div class="preview-tasks">
+                <div class="preview-task done-task">
+                  <i class="bi bi-check-circle-fill text-success"></i>
+                  <span>Entregar informe de laboratorio</span>
+                </div>
+                <div class="preview-task done-task">
+                  <i class="bi bi-check-circle-fill text-success"></i>
+                  <span>Estudiar para el examen de cálculo</span>
+                </div>
+                <div class="preview-task pending-task">
+                  <i class="bi bi-circle text-warning"></i>
+                  <span>Leer capítulo 7 de álgebra</span>
+                </div>
+                <div class="preview-task pending-task">
+                  <i class="bi bi-circle text-warning"></i>
+                  <span>Preparar exposición grupal</span>
+                </div>
+                <div class="preview-task pending-task">
+                  <i class="bi bi-circle text-warning"></i>
+                  <span>Revisar notas de programación</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     FEATURES SECTION
+════════════════════════════════════════════ -->
+<section class="features-section py-6">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="section-title">¿Por qué elegir <span class="text-gradient">TaskFlow</span>?</h2>
+      <p class="section-subtitle text-muted">Todo lo que necesitas para mantenerte organizado y productivo</p>
+    </div>
+    <div class="row g-4">
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card h-100">
+          <div class="feature-icon-wrap" style="--icon-color: #6366f1;">
+            <i class="bi bi-cloud-check"></i>
+          </div>
+          <h3 class="feature-title">Acceso desde cualquier lugar</h3>
+          <p class="feature-text text-muted">
+            Tus tareas sincronizadas en la nube. Accede desde tu computadora, tablet o smartphone sin perder ningún dato.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card h-100">
+          <div class="feature-icon-wrap" style="--icon-color: #10b981;">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <h3 class="feature-title">Seguridad garantizada</h3>
+          <p class="feature-text text-muted">
+            Contraseñas cifradas, sesiones seguras y cada usuario solo puede ver sus propias tareas. Tu privacidad es prioridad.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card h-100">
+          <div class="feature-icon-wrap" style="--icon-color: #f59e0b;">
+            <i class="bi bi-lightning-charge"></i>
+          </div>
+          <h3 class="feature-title">Rápido y eficiente</h3>
+          <p class="feature-text text-muted">
+            Interfaz intuitiva y ágil. Crea, edita y marca tareas como completadas en segundos sin curva de aprendizaje.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card h-100">
+          <div class="feature-icon-wrap" style="--icon-color: #ec4899;">
+            <i class="bi bi-graph-up-arrow"></i>
+          </div>
+          <h3 class="feature-title">Seguimiento de progreso</h3>
+          <p class="feature-text text-muted">
+            Visualiza cuántas tareas tienes pendientes y cuántas has completado. Mantén el control de tu productividad.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card h-100">
+          <div class="feature-icon-wrap" style="--icon-color: #3b82f6;">
+            <i class="bi bi-person-check"></i>
+          </div>
+          <h3 class="feature-title">Multi-usuario</h3>
+          <p class="feature-text text-muted">
+            Cada usuario tiene su espacio privado. La plataforma SaaS permite múltiples cuentas de forma independiente.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card h-100">
+          <div class="feature-icon-wrap" style="--icon-color: #8b5cf6;">
+            <i class="bi bi-phone"></i>
+          </div>
+          <h3 class="feature-title">Diseño responsive</h3>
+          <p class="feature-text text-muted">
+            Funciona perfectamente en todos los tamaños de pantalla. Tu gestor de tareas siempre a la mano.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     CTA SECTION
+════════════════════════════════════════════ -->
+<section class="cta-section py-6">
+  <div class="container">
+    <div class="cta-card text-center">
+      <h2 class="cta-title mb-3">¿Listo para organizarte?</h2>
+      <p class="cta-subtitle text-muted mb-4">
+        Crea tu cuenta gratuita en segundos y empieza a gestionar tus tareas hoy mismo.
+      </p>
+      <a href="{{ url_for('register') }}" class="btn btn-primary-gradient btn-lg px-5" id="btn-cta-register">
+        <i class="bi bi-person-plus-fill me-2"></i>Crear cuenta gratis
+      </a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

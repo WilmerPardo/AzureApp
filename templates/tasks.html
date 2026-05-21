@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Tareas — TaskFlow SaaS{% endblock %}
+
+{% block content %}
+<div class="page-wrapper py-5">
+  <div class="container">
+
+    <!-- ── Encabezado ── -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+      <div>
+        <h1 class="page-title mb-1">
+          <i class="bi bi-check2-square me-2 text-primary"></i>Mis Tareas
+        </h1>
+        <p class="text-muted mb-0">
+          Gestiona todas tus tareas desde aquí
+        </p>
+      </div>
+      <a href="{{ url_for('create_task') }}" class="btn btn-primary-gradient" id="btn-tasks-create">
+        <i class="bi bi-plus-circle me-2"></i>Nueva tarea
+      </a>
+    </div>
+
+    <!-- ── Filtros ── -->
+    <div class="filter-bar mb-4">
+      <div class="d-flex flex-wrap gap-2">
+        <a
+          href="{{ url_for('tasks') }}"
+          class="btn btn-sm {% if filter_status == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+          id="filter-all"
+        >
+          <i class="bi bi-list me-1"></i>Todas
+        </a>
+        <a
+          href="{{ url_for('tasks', status='pendiente') }}"
+          class="btn btn-sm {% if filter_status == 'pendiente' %}btn-warning{% else %}btn-outline-warning{% endif %}"
+          id="filter-pending"
+        >
+          <i class="bi bi-clock me-1"></i>Pendientes
+        </a>
+        <a
+          href="{{ url_for('tasks', status='completada') }}"
+          class="btn btn-sm {% if filter_status == 'completada' %}btn-success{% else %}btn-outline-success{% endif %}"
+          id="filter-done"
+        >
+          <i class="bi bi-check2-circle me-1"></i>Completadas
+        </a>
+      </div>
+    </div>
+
+    <!-- ── Tabla de tareas ── -->
+    {% if tasks %}
+      <div class="card-section animate-fade-in">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" id="tasks-table">
+            <thead class="table-header">
+              <tr>
+                <th scope="col" style="width: 40%;">Tarea</th>
+                <th scope="col">Descripción</th>
+                <th scope="col" class="text-center" style="width: 130px;">Estado</th>
+                <th scope="col" class="text-center" style="width: 110px;">Fecha</th>
+                <th scope="col" class="text-center" style="width: 160px;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for task in tasks %}
+              <tr class="task-row {% if task.is_completed() %}task-done{% endif %}" id="task-row-{{ task.id }}">
+
+                <!-- Título -->
+                <td>
+                  <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-{% if task.is_completed() %}check-circle-fill text-success{% else %}circle text-warning{% endif %} mt-1 flex-shrink-0"></i>
+                    <div>
+                      <span class="fw-medium {% if task.is_completed() %}text-decoration-line-through text-muted{% endif %}">
+                        {{ task.title }}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Descripción -->
+                <td class="text-muted small">
+                  {% if task.description %}
+                    {{ task.description[:80] }}{% if task.description|length > 80 %}…{% endif %}
+                  {% else %}
+                    <span class="fst-italic">Sin descripción</span>
+                  {% endif %}
+                </td>
+
+                <!-- Estado badge -->
+                <td class="text-center">
+                  <span class="badge {% if task.is_completed() %}badge-done{% else %}badge-pending{% endif %}">
+                    <i class="bi bi-{% if task.is_completed() %}check2{% else %}clock{% endif %} me-1"></i>
+                    {{ task.status.capitalize() }}
+                  </span>
+                </td>
+
+                <!-- Fecha -->
+                <td class="text-center text-muted small">
+                  {{ task.created_at.strftime('%d/%m/%Y') }}
+                </td>
+
+                <!-- Acciones -->
+                <td class="text-center">
+                  <div class="d-flex justify-content-center gap-1 flex-wrap">
+
+                    <!-- Alternar estado -->
+                    <form method="POST" action="{{ url_for('toggle_task', task_id=task.id) }}" class="d-inline">
+                      <button
+                        type="submit"
+                        class="btn btn-sm {% if task.is_completed() %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                        title="{% if task.is_completed() %}Marcar pendiente{% else %}Marcar completada{% endif %}"
+                        id="btn-toggle-{{ task.id }}"
+                      >
+                        <i class="bi bi-{% if task.is_completed() %}arrow-counterclockwise{% else %}check-lg{% endif %}"></i>
+                      </button>
+                    </form>
+
+                    <!-- Editar -->
+                    <a
+                      href="{{ url_for('edit_task', task_id=task.id) }}"
+                      class="btn btn-sm btn-outline-primary"
+                      title="Editar tarea"
+                      id="btn-edit-{{ task.id }}"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </a>
+
+                    <!-- Eliminar -->
+                    <form
+                      method="POST"
+                      action="{{ url_for('delete_task', task_id=task.id) }}"
+                      class="d-inline"
+                      onsubmit="return confirm('¿Eliminar esta tarea? Esta acción no se puede deshacer.')"
+                    >
+                      <button
+                        type="submit"
+                        class="btn btn-sm btn-outline-danger"
+                        title="Eliminar tarea"
+                        id="btn-delete-{{ task.id }}"
+                      >
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </form>
+
+                  </div>
+                </td>
+
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Contador -->
+        <div class="table-footer d-flex justify-content-between align-items-center px-3 py-2">
+          <small class="text-muted">
+            Mostrando <strong>{{ tasks|length }}</strong>
+            {% if filter_status != 'all' %}tarea{% if tasks|length != 1 %}s{% endif %} {{ filter_status }}{% if tasks|length != 1 %}s{% endif %}{% else %}tarea{% if tasks|length != 1 %}s{% endif %} en total{% endif %}
+          </small>
+          {% if filter_status != 'all' %}
+          <a href="{{ url_for('tasks') }}" class="btn btn-sm btn-link text-muted" id="btn-clear-filter">
+            <i class="bi bi-x-circle me-1"></i>Quitar filtro
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+    {% else %}
+      <!-- Estado vacío -->
+      <div class="empty-state text-center py-6 animate-fade-in">
+        <div class="empty-icon mb-3">
+          <i class="bi bi-{% if filter_status == 'completada' %}trophy{% elif filter_status == 'pendiente' %}check-all{% else %}inbox{% endif %}"></i>
+        </div>
+        <h2 class="empty-title">
+          {% if filter_status == 'completada' %}
+            No tienes tareas completadas aún
+          {% elif filter_status == 'pendiente' %}
+            ¡No tienes tareas pendientes! 🎉
+          {% else %}
+            Sin tareas todavía
+          {% endif %}
+        </h2>
+        <p class="text-muted mb-4">
+          {% if filter_status == 'completada' %}
+            Completa algunas tareas para verlas aquí.
+          {% elif filter_status == 'pendiente' %}
+            Todas tus tareas están completadas. ¡Excelente trabajo!
+          {% else %}
+            ¡Crea tu primera tarea y comienza a organizarte!
+          {% endif %}
+        </p>
+        {% if filter_status == 'all' or filter_status == 'pendiente' %}
+          <a href="{{ url_for('create_task') }}" class="btn btn-primary-gradient" id="btn-empty-create">
+            <i class="bi bi-plus-circle me-2"></i>Crear primera tarea
+          </a>
+        {% else %}
+          <a href="{{ url_for('tasks') }}" class="btn btn-outline-primary" id="btn-empty-viewall">
+            <i class="bi bi-list me-2"></i>Ver todas las tareas
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
