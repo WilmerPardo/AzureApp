@@ -1,7 +1,8 @@
 # =============================================================
 # init_db.py — TaskFlow SaaS
-# Script para inicializar la base de datos MySQL.
-# Ejecutar una sola vez antes del primer despliegue:
+# Script opcional para inicializar la base de datos SQLite.
+# La app tambien crea las tablas automaticamente al arrancar.
+# Ejecutar solo si quieres preparar la base manualmente:
 #   python init_db.py
 # =============================================================
 
