@@ -26,7 +26,7 @@ Esta aplicación es un **Software as a Service (SaaS)** porque:
 | **Acceso desde la nube** | Desplegado en Azure App Service, accesible desde cualquier navegador |
 | **Sin instalación local** | El usuario solo necesita un navegador web |
 | **Escalable** | Azure permite escalar verticalmente/horizontalmente |
-| **Datos centralizados** | PostgreSQL en Azure gestiona todos los datos |
+| **Datos centralizados** | MySQL en Azure gestiona todos los datos |
 | **Disponibilidad 24/7** | Infraestructura administrada por Azure |
 
 ---
@@ -72,7 +72,7 @@ taskflow-saas/
 ### 1. Requisitos previos
 
 - Python 3.10 o superior
-- PostgreSQL instalado localmente
+- MySQL Server instalado localmente
 - Git
 
 ### 2. Clonar el repositorio
@@ -112,30 +112,32 @@ cp .env.example .env
 Contenido del archivo `.env`:
 ```env
 SECRET_KEY=mi-clave-secreta-muy-segura
-DATABASE_URL=postgresql://postgres:mi_password@localhost:5432/taskflowdb
+DATABASE_URL=mysql+pymysql://root:mi_password@localhost:3306/taskflowdb?charset=utf8mb4
 ```
 
 ---
 
-## 🗄️ Crear la base de datos PostgreSQL
+## 🗄️ Crear la base de datos MySQL
 
-### Opción A: Usando psql (línea de comandos)
+### Opción A: Usando mysql (línea de comandos)
 
 ```bash
-# Conectarse a PostgreSQL
-psql -U postgres
+# Conectarse a MySQL
+mysql -u root -p
 
-# Dentro de psql:
-CREATE DATABASE taskflowdb;
-\q
+# Dentro de MySQL:
+CREATE DATABASE taskflowdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+EXIT;
 ```
 
-### Opción B: Usando pgAdmin
+### Opción B: Usando MySQL Workbench
 
-1. Abre pgAdmin
-2. Clic derecho en "Databases" → "Create" → "Database"
-3. Nombre: `taskflowdb`
-4. Guardar
+1. Abre MySQL Workbench
+2. Conéctate a tu servidor MySQL local
+3. Crea un nuevo schema
+4. Nombre: `taskflowdb`
+5. Charset/collation: `utf8mb4` / `utf8mb4_unicode_ci`
+6. Guardar
 
 ### Inicializar las tablas
 
@@ -207,12 +209,12 @@ O desde el portal:
 
 ---
 
-### Paso 3 — Crear Azure Database for PostgreSQL (Flexible Server)
+### Paso 3 — Crear Azure Database for MySQL (Flexible Server)
 
 ```bash
-az postgres flexible-server create \
+az mysql flexible-server create \
   --resource-group rg-taskflow \
-  --name taskflow-pgserver \
+  --name taskflow-mysqlserver \
   --location eastus \
   --admin-user adminuser \
   --admin-password "TuPassword123!" \
@@ -223,14 +225,14 @@ az postgres flexible-server create \
 
 Crear la base de datos:
 ```bash
-az postgres flexible-server db create \
+az mysql flexible-server db create \
   --resource-group rg-taskflow \
-  --server-name taskflow-pgserver \
+  --server-name taskflow-mysqlserver \
   --database-name taskflowdb
 ```
 
 O desde el portal:
-1. Busca **Azure Database for PostgreSQL**
+1. Busca **Azure Database for MySQL**
 2. Selecciona **Flexible Server**
 3. Configura nombre, región, usuario y contraseña
 4. En **Networking**, permite acceso desde Azure Services
@@ -272,14 +274,15 @@ az webapp config appsettings set \
   --name taskflow-saas-app \
   --settings \
     SECRET_KEY="tu-clave-secreta-muy-larga-y-aleatoria" \
-    DATABASE_URL="postgresql://adminuser:TuPassword123!@taskflow-pgserver.postgres.database.azure.com:5432/taskflowdb?sslmode=require"
+    DATABASE_URL="mysql+pymysql://adminuser:TuPassword123!@taskflow-mysqlserver.mysql.database.azure.com:3306/taskflowdb?charset=utf8mb4"
 ```
 
 O desde el portal:
 1. App Service → **Configuración** → **Configuración de la aplicación**
 2. Agregar:
    - `SECRET_KEY` = (clave aleatoria segura)
-   - `DATABASE_URL` = (cadena de conexión PostgreSQL con `?sslmode=require`)
+   - `DATABASE_URL` = (cadena de conexión MySQL con `mysql+pymysql://...`)
+   - `MYSQL_SSL_CA` = (opcional, ruta al certificado CA si tu servidor MySQL exige TLS validado)
 
 ---
 
@@ -349,10 +352,10 @@ https://taskflow-saas-app.azurewebsites.net
 
 ### Azure
 - [ ] El repositorio está en GitHub (sin `.env`)
-- [ ] Azure Database for PostgreSQL está creado y accesible
+- [ ] Azure Database for MySQL está creado y accesible
 - [ ] El App Service tiene Python 3.11 en Linux
 - [ ] `SECRET_KEY` configurada en App Settings
-- [ ] `DATABASE_URL` configurada con `sslmode=require`
+- [ ] `DATABASE_URL` configurada con una URI `mysql+pymysql://...`
 - [ ] Startup command configurado correctamente
 - [ ] El deployment desde GitHub está activo
 - [ ] `python init_db.py` ejecutado correctamente en Azure
@@ -366,7 +369,8 @@ https://taskflow-saas-app.azurewebsites.net
 | Variable | Descripción | Ejemplo |
 |---|---|---|
 | `SECRET_KEY` | Clave secreta de Flask (sesiones y CSRF) | `super-secret-random-key-123` |
-| `DATABASE_URL` | Cadena de conexión PostgreSQL | `postgresql://user:pass@host:5432/db?sslmode=require` |
+| `DATABASE_URL` | Cadena de conexión MySQL para SQLAlchemy/PyMySQL | `mysql+pymysql://user:pass@host:3306/db?charset=utf8mb4` |
+| `MYSQL_SSL_CA` | Ruta opcional al certificado CA para conexiones MySQL TLS | `/home/site/wwwroot/DigiCertGlobalRootCA.crt.pem` |
 
 ---
 
@@ -376,13 +380,13 @@ https://taskflow-saas-app.azurewebsites.net
 |---|---|
 | Backend | Python 3.11 + Flask 3.0 |
 | Frontend | HTML5 + Bootstrap 5 + Jinja2 |
-| Base de datos | PostgreSQL |
+| Base de datos | MySQL |
 | ORM | SQLAlchemy |
 | Autenticación | Flask-Login + Werkzeug |
 | Formularios | Flask-WTF + WTForms |
 | Servidor producción | Gunicorn |
 | Hosting | Azure App Service (Linux) |
-| Base de datos cloud | Azure Database for PostgreSQL |
+| Base de datos cloud | Azure Database for MySQL |
 
 ---
 

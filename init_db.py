@@ -1,6 +1,6 @@
 # =============================================================
 # init_db.py — TaskFlow SaaS
-# Script para inicializar la base de datos PostgreSQL.
+# Script para inicializar la base de datos MySQL.
 # Ejecutar una sola vez antes del primer despliegue:
 #   python init_db.py
 # =============================================================
