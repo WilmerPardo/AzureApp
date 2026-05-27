@@ -40,6 +40,12 @@ Thumbs.db
 instance/
 flask_session/
 
+# Bases de datos y respaldos locales
+*.db
+*.sqlite
+*.sqlite3
+backups/
+
 # pytest
 .pytest_cache/
 htmlcov/
