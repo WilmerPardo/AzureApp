@@ -1,27 +1,26 @@
 # TaskFlow SaaS
 
-Aplicacion web de gestion de tareas academicas y personales hecha con Flask, Jinja2, Bootstrap, Flask-Login y SQLAlchemy. La aplicacion mantiene SQLite para desarrollo local y queda preparada para usar Azure Database for PostgreSQL Flexible Server en produccion.
+Aplicación web de gestión de tareas académicas y personales hecha con Flask, Jinja2, Bootstrap, Flask-Login y Azure Cosmos DB for NoSQL.
 
 ## Funcionalidades
 
-- Registro e inicio de sesion de usuarios.
-- Contrasenas cifradas.
-- Dashboard con estadisticas.
+- Registro e inicio de sesión de usuarios.
+- Contraseñas cifradas con Werkzeug.
+- Dashboard con estadísticas.
 - Crear, editar, completar y eliminar tareas.
 - Cada usuario ve solo sus propias tareas.
-- Soporte para SQLite local y PostgreSQL externo.
+- Persistencia en documentos JSON usando Azure Cosmos DB for NoSQL.
 
 ## Stack
 
-| Componente | Tecnologia |
+| Componente | Tecnología |
 |---|---|
 | Backend | Python 3.11 + Flask |
 | Frontend | HTML + Bootstrap + Jinja2 |
-| Base de datos local | SQLite |
-| Base de datos produccion | Azure Database for PostgreSQL Flexible Server |
-| ORM | SQLAlchemy |
-| Autenticacion | Flask-Login |
-| Produccion | Gunicorn |
+| Base de datos | Azure Cosmos DB for NoSQL |
+| SDK de datos | azure-cosmos |
+| Autenticación | Flask-Login |
+| Producción | Gunicorn |
 | Hosting | Azure App Service Linux |
 
 ## Estructura
@@ -35,34 +34,50 @@ taskflow-saas/
 |-- init_db.py
 |-- requirements.txt
 |-- startup.txt
+|-- services/
+|   |-- __init__.py
+|   `-- cosmos_service.py
 |-- scripts/
-|   `-- migrate_sqlite_to_postgres.py
+|   |-- init_cosmos.py
+|   |-- migrate_sqlite_to_cosmos.py
+|   `-- export_cosmos_to_json.py
 |-- templates/
 |-- static/
 `-- instance/
 ```
 
-## Configuracion de base de datos
+## Modelo de datos NoSQL
 
-La aplicacion decide la conexion en este orden:
+La aplicación usa dos contenedores en Azure Cosmos DB for NoSQL.
 
-1. `DATABASE_URL`, si existe.
-2. Variables de Azure App Service: `AZURE_POSTGRESQL_USER`, `AZURE_POSTGRESQL_PASSWORD`, `AZURE_POSTGRESQL_HOST`, `AZURE_POSTGRESQL_NAME`.
-3. SQLite como fallback local.
+Contenedor `users`, partition key `/id`:
 
-Las URLs `postgres://` y `postgresql://` se normalizan automaticamente a `postgresql+psycopg2://` para SQLAlchemy. Si el host termina en `.postgres.database.azure.com`, se agrega `sslmode=require` cuando no venga definido.
-
-SQLite local por defecto:
-
-```text
-instance/taskflow.db
+```json
+{
+  "id": "correo@ejemplo.com",
+  "type": "user",
+  "name": "Nombre del usuario",
+  "email": "correo@ejemplo.com",
+  "password_hash": "hash_de_password",
+  "created_at": "fecha_iso"
+}
 ```
 
-SQLite en Azure App Service, solo si no configuras PostgreSQL:
+Contenedor `tasks`, partition key `/userId`:
 
-```text
-/home/site/data/taskflow.db
+```json
+{
+  "id": "uuid-generado",
+  "type": "task",
+  "userId": "correo@ejemplo.com",
+  "title": "Título",
+  "description": "Descripción",
+  "status": "pendiente",
+  "created_at": "fecha_iso"
+}
 ```
+
+El email se normaliza en minúsculas y se usa como `id` del usuario. Las tareas se consultan por `userId` para evitar consultas cross-partition en el flujo normal de la aplicación.
 
 ## Ejecutar en local
 
@@ -79,14 +94,24 @@ Instalar dependencias:
 pip install -r requirements.txt
 ```
 
-Crear `.env` local si quieres fijar SQLite:
+Crear `.env` local:
 
 ```env
-SECRET_KEY=una-clave-segura
-SQLITE_DB_PATH=instance/taskflow.db
+SECRET_KEY=una_clave_larga_y_segura
+COSMOS_ENDPOINT=https://NOMBRE.documents.azure.com:443/
+COSMOS_KEY=CLAVE_DE_COSMOS
+COSMOS_DATABASE_NAME=taskflowdb
+COSMOS_USERS_CONTAINER=users
+COSMOS_TASKS_CONTAINER=tasks
 ```
 
-Ejecutar:
+Inicializar base y contenedores:
+
+```powershell
+python scripts/init_cosmos.py
+```
+
+Ejecutar la aplicación:
 
 ```powershell
 python app.py
@@ -98,87 +123,100 @@ Abrir:
 http://localhost:5000
 ```
 
-La primera vez que arranca, Flask crea automaticamente las tablas `users` y `tasks`.
+## Variables de entorno para Azure App Service
 
-## Variables de entorno
-
-Desarrollo local con SQLite:
+En Azure App Service se deben configurar estas variables:
 
 ```env
-SECRET_KEY=una-clave-segura
-SQLITE_DB_PATH=instance/taskflow.db
+SECRET_KEY=una_clave_larga_y_segura
+COSMOS_ENDPOINT=https://NOMBRE.documents.azure.com:443/
+COSMOS_KEY=CLAVE_DE_COSMOS
+COSMOS_DATABASE_NAME=taskflowdb
+COSMOS_USERS_CONTAINER=users
+COSMOS_TASKS_CONTAINER=tasks
 ```
 
-Produccion con PostgreSQL usando `DATABASE_URL`:
-
-```env
-SECRET_KEY=una-clave-segura
-DATABASE_URL=postgresql+psycopg2://usuario:password@host:5432/nombre_db?sslmode=require
-```
-
-Produccion con variables de Azure App Service:
-
-```env
-SECRET_KEY=una-clave-segura
-AZURE_POSTGRESQL_USER=usuario
-AZURE_POSTGRESQL_PASSWORD=password
-AZURE_POSTGRESQL_HOST=servidor.postgres.database.azure.com
-AZURE_POSTGRESQL_NAME=nombre_db
-```
-
-Si `DATABASE_URL` existe, tiene prioridad sobre las variables `AZURE_POSTGRESQL_*`.
-
-## Despliegue en Azure App Service con PostgreSQL
-
-1. Crear un recurso **Azure Database for PostgreSQL Flexible Server**.
-2. Crear la base de datos de la aplicacion, por ejemplo `taskflowdb`.
-3. Configurar red/firewall para permitir la conexion desde Azure App Service, o usar **Service Connector**.
-4. En la Web App, abrir `Settings -> Environment variables`.
-5. Agregar `SECRET_KEY` y una de estas opciones:
+Ruta en Azure:
 
 ```text
-DATABASE_URL = postgresql+psycopg2://usuario:password@servidor.postgres.database.azure.com:5432/taskflowdb?sslmode=require
+Azure App Service
+Settings
+Environment variables
 ```
 
-O:
+Después de guardar las variables, reinicia el App Service.
 
-```text
-AZURE_POSTGRESQL_USER = usuario
-AZURE_POSTGRESQL_PASSWORD = password
-AZURE_POSTGRESQL_HOST = servidor.postgres.database.azure.com
-AZURE_POSTGRESQL_NAME = taskflowdb
-```
-
-6. En `Settings -> Configuration -> General settings`, configurar **Startup command**:
+El comando de inicio recomendado es:
 
 ```text
 gunicorn app:app --bind=0.0.0.0 --timeout 600
 ```
 
-7. Guardar cambios y reiniciar la Web App.
-8. Si ya habia datos en SQLite, ejecutar la migracion.
-9. Revisar logs en App Service si hay errores de conexion o credenciales.
+## Pasos en Azure Portal
 
-La aplicacion crea las tablas faltantes al arrancar. Para cambios de esquema futuros se recomienda agregar migraciones formales con Flask-Migrate/Alembic.
+1. Crear recurso en Azure.
+2. Buscar Azure Cosmos DB.
+3. Seleccionar Azure Cosmos DB for NoSQL.
+4. Crear la cuenta.
+5. Elegir modo serverless si está disponible para reducir costos académicos.
+6. Crear una base llamada `taskflowdb`.
+7. Crear contenedor `users` con partition key `/id`.
+8. Crear contenedor `tasks` con partition key `/userId`.
+9. Copiar URI/Endpoint y Primary Key.
+10. Pegar esas credenciales como variables de entorno en Azure App Service.
+11. Reiniciar App Service.
+12. Probar registro, login y CRUD de tareas.
 
-## Migracion SQLite a PostgreSQL
+## Inicialización de Cosmos DB
 
-El script `scripts/migrate_sqlite_to_postgres.py`:
+El script `scripts/init_cosmos.py` lee:
+
+- `COSMOS_ENDPOINT`
+- `COSMOS_KEY`
+- `COSMOS_DATABASE_NAME`
+- `COSMOS_USERS_CONTAINER`
+- `COSMOS_TASKS_CONTAINER`
+
+Ejecutar:
+
+```powershell
+python scripts/init_cosmos.py
+```
+
+El script crea la base de datos si no existe y crea los contenedores con estas partition keys:
+
+- `users`: `/id`
+- `tasks`: `/userId`
+
+También se puede ejecutar:
+
+```powershell
+python init_db.py
+```
+
+## Migración SQLite a Cosmos DB
+
+El script `scripts/migrate_sqlite_to_cosmos.py`:
 
 - Lee SQLite desde `SQLITE_DB_PATH` o `instance/taskflow.db`.
-- Lee PostgreSQL desde `DATABASE_URL` o `AZURE_POSTGRESQL_*`.
-- Crea tablas en PostgreSQL si no existen.
-- Migra primero `users` y luego `tasks`.
-- Conserva `id`, `name`, `email`, `password_hash`, `created_at`, `title`, `description`, `status` y `user_id`.
-- Evita duplicar usuarios por `email`.
+- Conecta con Azure Cosmos DB usando variables `COSMOS_*`.
+- Migra usuarios al contenedor `users`.
+- Usa el email en minúsculas como `id` del usuario.
+- Migra tareas al contenedor `tasks`.
+- Convierte el `user_id` numérico anterior al email del usuario.
+- Usa `upsert_item` para evitar duplicados.
 - No borra ni modifica el archivo SQLite original.
 
 Ejemplo local:
 
 ```powershell
 $env:SQLITE_DB_PATH = "instance/taskflow.db"
-$env:DATABASE_URL = "postgresql+psycopg2://usuario:password@host:5432/nombre_db?sslmode=require"
-python scripts/migrate_sqlite_to_postgres.py
+$env:COSMOS_ENDPOINT = "https://NOMBRE.documents.azure.com:443/"
+$env:COSMOS_KEY = "CLAVE_DE_COSMOS"
+$env:COSMOS_DATABASE_NAME = "taskflowdb"
+$env:COSMOS_USERS_CONTAINER = "users"
+$env:COSMOS_TASKS_CONTAINER = "tasks"
+python scripts/migrate_sqlite_to_cosmos.py
 ```
 
 Ejemplo desde consola SSH/Kudu de Azure App Service:
@@ -186,69 +224,68 @@ Ejemplo desde consola SSH/Kudu de Azure App Service:
 ```bash
 cd /home/site/wwwroot
 export SQLITE_DB_PATH=/home/site/data/taskflow.db
-export DATABASE_URL='postgresql+psycopg2://usuario:password@servidor.postgres.database.azure.com:5432/taskflowdb?sslmode=require'
-python scripts/migrate_sqlite_to_postgres.py
+export COSMOS_ENDPOINT='https://NOMBRE.documents.azure.com:443/'
+export COSMOS_KEY='CLAVE_DE_COSMOS'
+export COSMOS_DATABASE_NAME='taskflowdb'
+export COSMOS_USERS_CONTAINER='users'
+export COSMOS_TASKS_CONTAINER='tasks'
+python scripts/migrate_sqlite_to_cosmos.py
 ```
 
-## Backup y migracion de base de datos
+## Backup y migración de base de datos
 
-### Backup de SQLite local
+Antes la aplicación usaba SQLite como archivo local dentro del entorno de la aplicación. Ahora se usa Azure Cosmos DB for NoSQL como base de datos separada de Azure App Service.
 
-Crear una carpeta de respaldos y copiar el archivo:
+Azure Cosmos DB realiza backups automáticos. La cuenta puede configurarse con backup periódico o backup continuo con restauración a punto en el tiempo, según la opción elegida en Azure.
+
+Para un respaldo manual académico, se puede exportar la información a JSON:
 
 ```powershell
-mkdir backups
-copy instance\taskflow.db backups\taskflow-sqlite-backup.db
+python scripts/export_cosmos_to_json.py
 ```
 
-### Backup de SQLite en Azure App Service
-
-El archivo anterior de SQLite puede estar en:
+El script crea:
 
 ```text
-/home/site/data/taskflow.db
+backups/users_backup.json
+backups/tasks_backup.json
 ```
 
-Desde SSH/Kudu puedes copiarlo dentro del almacenamiento persistente:
+La carpeta `backups/` está ignorada por Git para evitar subir datos sensibles.
 
-```bash
-mkdir -p /home/site/data/backups
-cp /home/site/data/taskflow.db /home/site/data/backups/taskflow-sqlite-backup.db
-```
+## Verificar documentos en Azure Portal
 
-Luego descargalo desde Kudu/Advanced Tools o por el metodo de transferencia permitido en tu entorno.
-
-### Backup manual de PostgreSQL con pg_dump
-
-`pg_dump` usa URLs PostgreSQL/libpq, no URLs SQLAlchemy. Si tu `DATABASE_URL` contiene `postgresql+psycopg2://`, quita `+psycopg2` para el comando.
-
-Formato URL:
-
-```bash
-mkdir -p backups
-pg_dump "postgresql://usuario:password@servidor.postgres.database.azure.com:5432/taskflowdb?sslmode=require" -Fc -f backups/taskflow-postgres.dump
-```
-
-Formato libpq:
-
-```bash
-pg_dump "host=servidor.postgres.database.azure.com port=5432 dbname=taskflowdb user=usuario sslmode=require" -Fc -f backups/taskflow-postgres.dump
-```
-
-Azure Database for PostgreSQL Flexible Server tambien incluye backups automaticos y restauracion a un punto en el tiempo. El backup manual con `pg_dump` sirve como respaldo adicional o para entregar evidencia academica.
+1. Abrir la cuenta de Azure Cosmos DB.
+2. Entrar a Data Explorer.
+3. Abrir la base `taskflowdb`.
+4. Abrir el contenedor `users`.
+5. Revisar que los documentos tengan `id`, `type`, `email`, `name`, `password_hash` y `created_at`.
+6. Abrir el contenedor `tasks`.
+7. Revisar que los documentos tengan `id`, `type`, `userId`, `title`, `description`, `status` y `created_at`.
+8. Confirmar que el `userId` de cada tarea coincide con el `id` del usuario.
 
 ## Seguridad
 
 - No subir `.env`.
 - No subir archivos `.db`.
-- No subir contrasenas ni cadenas reales de conexion.
-- Guardar respaldos fuera del repositorio o en `backups/`, que esta ignorado por Git.
+- No subir respaldos reales con datos sensibles.
+- No subir claves reales de Cosmos DB.
+- Mantener `backups/` fuera de Git.
 - Definir `SECRET_KEY` con un valor largo y aleatorio en Azure.
+- Rotar `COSMOS_KEY` si se expone accidentalmente.
 
-## Script opcional de inicializacion
+`.gitignore` debe incluir:
 
-Para crear/verificar tablas manualmente en la base configurada:
-
-```powershell
-python init_db.py
+```gitignore
+.env
+*.db
+instance/
+backups/
+__pycache__/
+venv/
+.venv/
 ```
+
+## Justificación técnica
+
+La aplicación fue modificada para separar la capa de datos del servidor web. Anteriormente usaba SQLite, una base de datos basada en archivo, almacenada dentro del entorno de la aplicación. Ahora se utiliza Azure Cosmos DB for NoSQL, una base de datos administrada en la nube que almacena la información como documentos JSON en contenedores independientes. Esta arquitectura permite separar código y datos, mejorar la escalabilidad, facilitar respaldos automáticos y permitir restauración mediante las opciones de backup de Azure Cosmos DB.

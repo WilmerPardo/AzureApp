@@ -1,24 +1,18 @@
 # =============================================================
 # init_db.py - TaskFlow SaaS
-# Script opcional para inicializar la base configurada.
+# Script opcional para inicializar Azure Cosmos DB for NoSQL.
 #
-# Usa la misma prioridad de config.py:
-#   1. DATABASE_URL
-#   2. AZURE_POSTGRESQL_*
-#   3. SQLite local
-#
-# Ejecutar solo si quieres preparar las tablas manualmente:
+# Ejecutar:
 #   python init_db.py
 # =============================================================
 
-from app import app
-from models import db
+from services.cosmos_service import initialize_cosmos
 
-with app.app_context():
-    print("Conectando a la base de datos configurada...")
-    db.create_all()
-    print("Tablas creadas/verificadas correctamente:")
-    print("   - users")
-    print("   - tasks")
-    print("\nBase de datos inicializada exitosamente.")
-    print("Ahora puedes ejecutar: flask run  o  gunicorn app:app")
+
+if __name__ == "__main__":
+    print("Conectando a Azure Cosmos DB for NoSQL...")
+    initialize_cosmos()
+    print("Base de datos y contenedores verificados correctamente:")
+    print("   - users  partition key /id")
+    print("   - tasks  partition key /userId")
+    print("\nCosmos DB inicializado exitosamente.")
